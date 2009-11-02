@@ -12,6 +12,8 @@ $jcart['item_name']		= 'my-item-name';		// ITEM NAME
 $jcart['item_price']	= 'my-item-price';		// ITEM PRICE
 $jcart['item_qty']		= 'my-item-qty';		// ITEM QTY
 $jcart['item_add']		= 'my-add-button';		// ADD-TO-CART BUTTON
+//bulk
+$jcart['item_bulk'] = 'my-item-bulk';   //ITEM BULK DISCOUNT
 
 // PATH TO THE DIRECTORY CONTAINING JCART FILES
 $jcart['path'] = 'jcart/';

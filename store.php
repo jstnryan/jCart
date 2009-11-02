@@ -50,72 +50,142 @@ $cart =& $_SESSION['jcart']; if(!is_object($cart)) $cart = new jcart();
 	</head>
 	<body>
 		<div id="wrapper">
-			<h2>Demo Store</h2>
 
 			<div id="sidebar">
 				<?php $cart->display_cart($jcart);?>
 			</div>
 
 			<div id="content">
-				<form method="post" action="" class="jcart">
-					<fieldset>
-						<input type="hidden" name="my-item-id" value="1" />
-						<input type="hidden" name="my-item-name" value="Soccer Ball" />
-						<input type="hidden" name="my-item-price" value="25.00" />
-
-						<ul>
-							<li><strong>Soccer Ball</strong></li>
-							<li>Price: $25.00</li>
-							<li>
-								<label>Qty: <input type="text" name="my-item-qty" value="1" size="3" /></label>
-							</li>
-						</ul>
-
-						<input type="submit" name="my-add-button" value="add to cart" class="button" />
-					</fieldset>
-				</form>
-
-				<form method="post" action="" class="jcart">
-					<fieldset>
-						<input type="hidden" name="my-item-id" value="2" />
-						<input type="hidden" name="my-item-name" value="Baseball Mitt" />
-						<input type="hidden" name="my-item-price" value="19.50" />
-
-						<ul>
-							<li><strong>Baseball Mitt</strong></li>
-							<li>Price: $19.50</li>
-							<li>
-								<label>Qty: <input type="text" name="my-item-qty" value="1" size="3" /></label>
-							</li>
-						</ul>
-
-						<input type="submit" name="my-add-button" value="add to cart" class="button" />
-					</fieldset>
-				</form>
-
-				<form method="post" action="" class="jcart">
-					<fieldset>
-						<input type="hidden" name="my-item-id" value="3" />
-						<input type="hidden" name="my-item-name" value="Hockey Stick" />
-						<input type="hidden" name="my-item-price" value="33.25" />
-
-						<ul>
-							<li><strong>Hockey Stick</strong></li>
-							<li>Price: $33.25</li>
-							<li>
-								<label>Qty: <input type="text" name="my-item-qty" value="1" size="3" /></label>
-							</li>
-						</ul>
-
-						<input type="submit" name="my-add-button" value="add to cart" class="button" />
-					</fieldset>
-				</form>
-
-				<div class="clear"></div>
-			</div>
-		</div>
+        <div id="store1">
+          <h2>Demo Store #1</h2>
+  				<form method="post" action="" class="jcart">
+  					<fieldset>
+              <input type="hidden" name="my-store-id" value="1" />
+  						<input type="hidden" name="my-item-id" value="1" />
+  						<input type="hidden" name="my-item-name" value="Soccer Ball" />
+  						<input type="hidden" name="my-item-price" value="25.00" />
+  						<input type="hidden" name="my-item-bulk" value="6,20.00;11,15.00;16,10.00" />
+  
+  						<ul>
+  							<li><strong>Soccer Ball</strong></li>
+  							<li>Price: $25.00</li>
+  							<li>
+  								<label>Qty: <input type="text" name="my-item-qty" value="1" size="3" /></label>
+  							</li>
+  						</ul>
+  
+  						<input type="submit" name="my-add-button" value="add to cart" class="button" />
+  					</fieldset>
+  				</form>
+  
+  				<form method="post" action="" class="jcart">
+  					<fieldset>
+              <input type="hidden" name="my-store-id" value="1" />
+  						<input type="hidden" name="my-item-id" value="2" />
+  						<input type="hidden" name="my-item-name" value="Baseball Mitt" />
+  						<input type="hidden" name="my-item-price" value="19.50" />
+  						<input type="hidden" name="my-item-bulk" value="80,11.00;20,17.00;60,13.00;40,15.00;100,9.00" />
+  
+  						<ul>
+  							<li><strong>Baseball Mitt</strong></li>
+  							<li>Price: $19.50</li>
+  							<li>
+  								<label>Qty: <input type="text" name="my-item-qty" value="1" size="3" /></label>
+  							</li>
+  						</ul>
+  
+  						<input type="submit" name="my-add-button" value="add to cart" class="button" />
+  					</fieldset>
+  				</form>
+  
+  				<form method="post" action="" class="jcart">
+  					<fieldset>
+              <input type="hidden" name="my-store-id" value="1" />
+  						<input type="hidden" name="my-item-id" value="3" />
+  						<input type="hidden" name="my-item-name" value="Hockey Stick" />
+  						<input type="hidden" name="my-item-price" value="33.25" />
+  
+  						<ul>
+  							<li><strong>Hockey Stick</strong></li>
+  							<li>Price: $33.25</li>
+  							<li>
+  								<label>Qty: <input type="text" name="my-item-qty" value="1" size="3" /></label>
+  							</li>
+  						</ul>
+  
+  						<input type="submit" name="my-add-button" value="add to cart" class="button" />
+  					</fieldset>
+  				</form>
+  
+  				<div class="clear"></div>
+  		  </div>
+<!-- ----------------------------------------------------------------------- -->
+        <div id="store2">
+          <h2>Demo Store #2</h2>
+  				<form method="post" action="" class="jcart">
+  					<fieldset>
+              <input type="hidden" name="my-store-id" value="2" />
+  						<input type="hidden" name="my-item-id" value="1" />
+  						<input type="hidden" name="my-item-name" value="Soccer Ball" />
+  						<input type="hidden" name="my-item-price" value="25.00" />
+  						<input type="hidden" name="my-item-bulk" value="6,20.00;11,15.00;16,10.00" />
+  
+  						<ul>
+  							<li><strong>Soccer Ball</strong></li>
+  							<li>Price: $25.00</li>
+  							<li>
+  								<label>Qty: <input type="text" name="my-item-qty" value="1" size="3" /></label>
+  							</li>
+  						</ul>
+  
+  						<input type="submit" name="my-add-button" value="add to cart" class="button" />
+  					</fieldset>
+  				</form>
+  
+  				<form method="post" action="" class="jcart">
+  					<fieldset>
+              <input type="hidden" name="my-store-id" value="2" />
+  						<input type="hidden" name="my-item-id" value="2" />
+  						<input type="hidden" name="my-item-name" value="Baseball Mitt" />
+  						<input type="hidden" name="my-item-price" value="19.50" />
+  						<input type="hidden" name="my-item-bulk" value="80,11.00;20,17.00;60,13.00;40,15.00;100,9.00" />
+  
+  						<ul>
+  							<li><strong>Baseball Mitt</strong></li>
+  							<li>Price: $19.50</li>
+  							<li>
+  								<label>Qty: <input type="text" name="my-item-qty" value="1" size="3" /></label>
+  							</li>
+  						</ul>
+  
+  						<input type="submit" name="my-add-button" value="add to cart" class="button" />
+  					</fieldset>
+  				</form>
+  
+  				<form method="post" action="" class="jcart">
+  					<fieldset>
+              <input type="hidden" name="my-store-id" value="2" />
+  						<input type="hidden" name="my-item-id" value="3" />
+  						<input type="hidden" name="my-item-name" value="Hockey Stick" />
+  						<input type="hidden" name="my-item-price" value="33.25" />
+  
+  						<ul>
+  							<li><strong>Hockey Stick</strong></li>
+  							<li>Price: $33.25</li>
+  							<li>
+  								<label>Qty: <input type="text" name="my-item-qty" value="1" size="3" /></label>
+  							</li>
+  						</ul>
+  
+  						<input type="submit" name="my-add-button" value="add to cart" class="button" />
+  					</fieldset>
+  				</form>
+  
+  				<div class="clear"></div>
+  		</div>
+		</div>		
 
 		<script type="text/javascript" src="jcart/jquery-1.3.2.min.js"></script>
-		<script type="text/javascript" src="jcart/jcart-javascript.min.php"></script>
+		<script type="text/javascript" src="jcart/jcart-javascript.php"></script>
 	</body>
 </html>

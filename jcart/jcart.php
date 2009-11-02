@@ -24,6 +24,10 @@ class jcart {
 	var $items = array();
 	var $itemprices = array();
 	var $itemqtys = array();
+//bulk
+	var $itembulk = array();
+//base
+  var $itembase = array();
 	var $itemname = array();
 
 	// CONSTRUCTOR FUNCTION
@@ -42,14 +46,34 @@ class jcart {
 			$item['price'] = $this->itemprices[$tmp_item];
 			$item['name'] = $this->itemname[$tmp_item];
 			$item['subtotal'] = $item['qty'] * $item['price'];
+//bulk
+// this line isn't necessary, but allows access to the bulk price
+// settings through the get_contents() function
+$item['bulk'] = $this->itembulk[$tmp_item];
+//base
+$item['base'] = $this->itembase[$tmp_item];
 			$items[] = $item;
 			}
 		return $items;
 		}
+		
+//bulk
+  function return_bulk_price($price, $qty, $bulk) {
+    if (!empty($bulk)) {
+      //get bulk price
+       //bad way to do this, but since we ksort()ed the bulk array, it works
+      foreach ($bulk as $key => $val) {
+        if ($qty >= $key) {
+          $price = $val;
+        }
+      }
+    }
+    return $price;
+  }
 
 
 	// ADD AN ITEM
-	function add_item($item_id, $item_qty=1, $item_price, $item_name)
+	function add_item($item_id, $item_qty=1, $item_price, $item_name, $item_bulk) //bulk
 		{
 		// VALIDATION
 		$valid_item_qty = $valid_item_price = false;
@@ -72,6 +96,8 @@ class jcart {
 			if($this->itemqtys[$item_id] > 0)
 				{
 				$this->itemqtys[$item_id] = $item_qty + $this->itemqtys[$item_id];
+				//bulk
+  			$this->itemprices[$item_id] = $this->return_bulk_price($this->itembase[$item_id], $this->itemqtys[$item_id], $this->itembulk[$item_id]);
 				$this->_update_total();
 				}
 			// THIS IS A NEW ITEM
@@ -79,8 +105,13 @@ class jcart {
 				{
 				$this->items[] = $item_id;
 				$this->itemqtys[$item_id] = $item_qty;
-				$this->itemprices[$item_id] = $item_price;
+				//base
+				$this->itembase[$item_id] = $item_price;
+				//bulk
+				$this->itemprices[$item_id] = $this->return_bulk_price($item_price, $item_qty, $item_bulk);
 				$this->itemname[$item_id] = $item_name;
+				//bulk
+				$this->itembulk[$item_id] = $item_bulk;
 				}
 			$this->_update_total();
 			return true;
@@ -113,6 +144,8 @@ class jcart {
 			else
 				{
 				$this->itemqtys[$item_id] = $item_qty;
+				//bulk
+				$this->itemprices[$item_id] = $this->return_bulk_price($this->itembase[$item_id], $item_qty, $this->itembulk[$item_id]);
 				}
 			$this->_update_total();
 			return true;
@@ -216,6 +249,10 @@ class jcart {
 		$this->itemprices = array();
 		$this->itemqtys = array();
 		$this->itemname = array();
+		//bulk
+		$this->itembulk = array();
+		//base
+		$this->itembase = array();
 		}
 
 
@@ -249,11 +286,29 @@ class jcart {
 		$item_qty = $_POST[$item_qty];
 		$item_price = $_POST[$item_price];
 		$item_name = $_POST[$item_name];
+		//bulk
+		$item_bulk = $_POST[$item_bulk];
 
 		// ADD AN ITEM
 		if ($_POST[$item_add])
-			{
-			$item_added = $this->add_item($item_id, $item_qty, $item_price, $item_name);
+			{			
+			//bulk
+			// checking for 'undefined' is admittedly hackish, but works.
+			if ($item_bulk === 'undefined') {
+        $item_bulk = array();
+      } else {
+        $temp_bulk = array();
+        $temp_bulk = explode(';', $item_bulk);
+        $e_pair = $item_bulk = array();
+        foreach ($temp_bulk as $pair) {
+          $e_pair = explode(',', $pair);
+          $item_bulk[$e_pair[0]] = $e_pair[1];
+        }
+        ksort($item_bulk);
+      }
+			
+			
+			$item_added = $this->add_item($item_id, $item_qty, $item_price, $item_name, $item_bulk);
 			// IF NOT TRUE THE ADD ITEM FUNCTION RETURNS THE ERROR TYPE
 			if ($item_added !== true)
 				{
@@ -447,7 +502,18 @@ class jcart {
 			echo "\t" . '<script type="text/javascript">$(function(){$("#jcart-item-id-' . $_POST['item_id'] . '").focus()});</script>' . "\n";
 			}
 
-		echo "</div>\n<!-- END JCART -->\n";
+		echo "</div>";
+
+
+//bulk
+
+echo '<div><pre>';
+print_r($this->get_contents());
+echo '</pre></div>';
+
+
+
+    echo "\n<!-- END JCART -->\n";
 		}
 	}
 ?>

@@ -172,9 +172,11 @@ $(function(){
 		var itemName = $(this).find('input[name=<?php echo $jcart['item_name']?>]').val();
 		var itemQty = $(this).find('input[name=<?php echo $jcart['item_qty']?>]').val();
 		var itemAdd = $(this).find('input[name=<?php echo $jcart['item_add']?>]').val();
+		//bulk
+		var itemBulk = $(this).find('input[name=<?php echo $jcart['item_bulk']?>]').val();
 
 		// SEND ITEM INFO VIA POST TO INTERMEDIATE SCRIPT WHICH CALLS jcart.php AND RETURNS UPDATED CART HTML
-		$.post('<?php echo $jcart['path'];?>jcart-relay.php', { "<?php echo $jcart['item_id']?>": itemId, "<?php echo $jcart['item_price']?>": itemPrice, "<?php echo $jcart['item_name']?>": itemName, "<?php echo $jcart['item_qty']?>": itemQty, "<?php echo $jcart['item_add']?>" : itemAdd }, function(data) {
+		$.post('<?php echo $jcart['path'];?>jcart-relay.php', { "<?php echo $jcart['item_id']?>": itemId, "<?php echo $jcart['item_price']?>": itemPrice, "<?php echo $jcart['item_name']?>": itemName, "<?php echo $jcart['item_qty']?>": itemQty, "<?php echo $jcart['item_add']?>" : itemAdd, "<?php echo $jcart['item_bulk']?>" : itemBulk }, function(data) { //bulk
 
 			// REPLACE EXISTING CART HTML WITH UPDATED CART HTML
 			$('#jcart').html(data);
