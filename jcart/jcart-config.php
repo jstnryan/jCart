@@ -18,6 +18,8 @@ $jcart['item_add']		= 'my-add-button';		// ADD-TO-CART BUTTON
 // ITEM OPTIONS PREFIX, in the form of: <input type="hidden" name="my-item-option[0][name]" value="Color" />
 $jcart['item_options'] = 'my-item-option';
 //JSTN-end
+//bulk
+$jcart['item_bulk'] = 'my-item-bulk';   //ITEM BULK DISCOUNT
 
 // PATH TO THE DIRECTORY CONTAINING JCART FILES
 $jcart['path'] = 'jcart/';

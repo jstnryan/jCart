@@ -173,6 +173,8 @@ $(function(){
 //		var itemName = $(this).find('input[name=<?php echo $jcart['item_name']?>]').val();
 //		var itemQty = $(this).find('input[name=<?php echo $jcart['item_qty']?>]').val();
 //		var itemAdd = $(this).find('input[name=<?php echo $jcart['item_add']?>]').val();
+		//bulk
+		//var itemBulk = $(this).find('input[name=<?php echo $jcart['item_bulk']?>]').val();
 
     //Generate "postData"
     var postData = {
@@ -182,7 +184,8 @@ $(function(){
       "<?php echo $jcart['item_price']?>" : $(this).find('input[name=<?php echo $jcart['item_price']?>]').val(),
       "<?php echo $jcart['item_name']?>"  : $(this).find('input[name=<?php echo $jcart['item_name']?>]').val(),
       "<?php echo $jcart['item_qty']?>"   : $(this).find('input[name=<?php echo $jcart['item_qty']?>]').val(),
-      "<?php echo $jcart['item_add']?>"   : $(this).find('input[name=<?php echo $jcart['item_add']?>]').val()
+      "<?php echo $jcart['item_add']?>"   : $(this).find('input[name=<?php echo $jcart['item_add']?>]').val(),
+      "<?php echo $jcart['item_bulk']?>"  : $(this).find('input[name=<?php echo $jcart['item_bulk']?>]').val()
     };
     $(this).find('[name^=<?php echo $jcart['item_options'] ?>]').each(function(){
       //Test to determine if the input is a radio button or checkbox, then

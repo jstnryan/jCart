@@ -1,0 +1,20 @@
+TO DO:
+--------------------------------------------------------------------------------
+~. remove "input" from selectors in jcart-javascript.php (when click "add to cart")
+~. modify $item['option'] in get_contents() function to output JSON instead of a string
+~. add shipping fields; price, weight, etc... (whatever PayPal supports)
+
+
+DONE:
+--------------------------------------------------------------------------------
+1. add a class name to all <A> links inside the cart ouptut, add the class name to the selector in all javascript functions for AJAX, so that normal links can be included if necessary.
+2. move <div id="jcart> to OUTSIDE of function
+3. added currency code selector to jcart.php (added paypal_currency field to, and removed currency_symbol field from jcart-config.php)
+4. moved "OUTPUT CART" echo ... section to external file (jcart-template.php)
+5. incorporated new $input_type[...] array, and removed old $input_type from jcart.php
+6. incorporated $is_checkout if(){...} block for WordPress into jcart.php (but left commented)
+7. product options... lots of code changes (including modifications to jcart-gateway.php), then re-modified for using radio/checkbox inputs
+8. added &charset= and &currency_code= fields to header in jcart-gateway.php
+9. incorporated HTML output for "PayPal_ID not entered" notice
+10.included config fields and code for paypal return and cancel fields in jcart-config.php and jcart-gateway.php
+11.changed currency_code to be optional in jcart-gateway.php

@@ -98,15 +98,23 @@ else
   	// SEND CART CONTENTS TO PAYPAL USING THEIR UPLOAD METHOD, FOR DETAILS SEE http://tinyurl.com/djoyoa
   	else if ($valid_prices === true)
   		{
-  		$today = date('Y-m-d');
+  		$now = date('Y-m-d H:i:s');
+  		$now_date = date('Y-m-d');
+  		$now_time = date('h:i:s');
+  		$now_meridiem = date('A');
   		
 //set up SQL connection
-$host = 'localhost';
-$username = 'USERNAME';
-$password = 'PASSWORD';
-$database = 'sativaon_delivery';
-$connect = mysql_connect($host,$username,$password) or die('Unable to connect to the database.');
-mysql_select_db($database,$connect) or die('Unable to connect to the database table.');
+include_once('/home2/sativaon/dbConnect/connectfunc.php');
+
+$query = "INSERT INTO `sativaon_main`.`invoices` (`ID`, `customer_first_name`, `customer_last_name`, `customer_address_one`, `customer_address_two`, `customer_city`, `customer_state`, `customer_zip`, `customer_phone`, `customer_email`, `invoice_total`, `invoice_description`, `dispensary_id`, `customer_invoice_status`, `order_last_update`, `order_time`, `order_date`, `order_time_meridian`)";
+$query .= " VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Processing', '".$now."', '".$now_time."', '".$now_date."', '".$now_meridiem."');";
+
+//email message
+$message="Thank you for placing your order with SativaOnline.com. Please login at http://sativaonline.com to manage or view the details of your order.\n\nYour order summary:\n\n";
+$message.="Customer information:\n{$customer['first_name']} {$customer['last_name']}\n{$customer['address_one']}\n{$customer['address_two']}\n{$customer['city']}, {$customer['state']} {$customer['zip']}\n{$customer['phone']}\n{$customer['email']}\n\nDate, Time: $now\n\n";
+
+if ($stmt=$mysql->prepare($query)) {
+
 
   		foreach ($cart->get_contents() as $store => $items) {
       		$cart_summary = '';
@@ -128,16 +136,25 @@ mysql_select_db($database,$connect) or die('Unable to connect to the database ta
             }
           	$store_subtotal += $item['subtotal'];
           }
-//SQL inject
-$query = "INSERT INTO `sativaon_delivery`.`orders` (`ID`, `customer_first_name`, `customer_last_name`, `customer_address_one`, `customer_address_two`, `customer_city`, `customer_state`, `customer_zip`, `customer_phone`, `customer_email`, `invoice_ammount`, `purchase_date`, `last_update`, `invoice_summery`, `store_ID`)";
-$query .= " VALUES (NULL, '".$customer['first_name']."', '".$customer['last_name']."', '".$customer['address_one']."', '".$customer['address_two']."', '".$customer['city']."', '".$customer['state']."', '".$customer['zip']."', '".$customer['phone']."', '".$customer['email']."', '".$store_subtotal."', '".$today."', NULL, '".$cart_summary."', '".$store."');";
 
-$result = @mysql_query("$query") or die('Error inserting new row in table.');
+  $stmt->bind_param("ssssssssssss", $customer['first_name'], $customer['last_name'], $customer['address_one'], $customer['address_two'], $customer['city'], $customer['state'], $customer['zip'], $customer['phone'], $customer['email'], $store_subtotal, $cart_summary, $store);
+  $stmt->execute();
+  
+//append info to email message
+$message.="Order from: {$cart->storenames[$store]} (Store ID: $store)\nSummary: $cart_summary\nSubtotal: \$$store_subtotal\n\n";
 
-if ($result !== true) {
-  //OOPS, there was an error inserting the row.
-}
   		}// foreach($cart->get_contents())
+  
+  $stmt->close();
+  		
+  		
+}//if($stmt=$mysql->prepare)
+
+//send email to customer
+$message.="Thank you for shopping with Sativa Online!";
+$mailSent=mail($customer['email'], "Your Sativaonline.com Order", $message, null,'-fadmin@orchid1software.com');
+$_SESSION['email_sent'] = $message;
+
   			
   		// EMPTY THE CART
   		$cart->empty_cart();
