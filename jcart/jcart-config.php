@@ -48,32 +48,37 @@ $jcart['paypal_cancel'] = '';
 // OPTIONAL SETTINGS
 
 // OVERRIDE DEFAULT CART TEXT
-$jcart['text']['cart_title']				= '';		// Shopping Cart
-$jcart['text']['single_item']				= '';		// Item
-$jcart['text']['multiple_items']			= '';		// Items
-$jcart['text']['subtotal']					= '';		// Subtotal
+$jcart['text']['cart_title']              = '';		// Shopping Cart
+$jcart['text']['single_item']             = '';		// Item
+$jcart['text']['multiple_items']          = '';		// Items
+$jcart['text']['subtotal']                = '';		// Subtotal
 
 //Explicit setting of currency_symbol DEPRECIATED as of jCart v1.2
 /*
-$jcart['text']['currency_symbol']			= '';		// $
+$jcart['text']['currency_symbol']			    = '';		// $
 */
 
-$jcart['text']['update_button']				= '';		// update
-$jcart['text']['checkout_button']			= '';		// checkout
-$jcart['text']['checkout_paypal_button']	= '';		// Checkout with PayPal
-$jcart['text']['remove_link']				= '';		// remove
-$jcart['text']['empty_button']				= '';		// empty
-$jcart['text']['empty_message']				= '';		// Your cart is empty!
-$jcart['text']['item_added_message']		= '';		// Item added!
+$jcart['text']['update_button']           = '';		// update
+$jcart['text']['checkout_button']			    = '';		// checkout
+$jcart['text']['checkout_paypal_button']  = '';		// Checkout with PayPal
+$jcart['text']['remove_link']             = '';		// remove
+$jcart['text']['empty_button']				    = '';		// empty
+$jcart['text']['empty_message']           = '';		// Your cart is empty!
+$jcart['text']['item_added_message']      = '';		// Item added!
 
-$jcart['text']['price_error']				= '';		// Invalid price format!
-$jcart['text']['quantity_error']			= '';		// Item quantities must be whole numbers!
-$jcart['text']['checkout_error']			='';		// Your order could not be processed!
+$jcart['text']['price_error']             = '';		// Invalid price format!
+$jcart['text']['quantity_error']          = '';		// Item quantities must be whole numbers!
+$jcart['text']['checkout_error']          ='';		// Your order could not be processed!
+
+//store
+// OVERRIDE THE TEXT WHICH APPEARS WHEN PRODUCTS FROM MULTIPLE STORES ARE ADDED TO CART
+$jcart['text']['store_text']              = '';   // Store:  (INCLUDE TRAILING SPACE)
+$jcart['text']['store_undefined']         = '';   // undefined
 
 // OVERRIDE THE DEFAULT BUTTONS WITH YOUR IMAGES BY SETTING THE PATH FOR EACH IMAGE
-$jcart['button']['checkout']				= '';
-$jcart['button']['paypal_checkout']			= '';
-$jcart['button']['update']					= '';
-$jcart['button']['empty']					= '';
+$jcart['button']['checkout']				      = '';
+$jcart['button']['paypal_checkout']			  = '';
+$jcart['button']['update']                = '';
+$jcart['button']['empty']                 = '';
 
 ?>

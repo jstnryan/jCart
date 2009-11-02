@@ -19,14 +19,15 @@ class jcart {
   var $itemcount = 0;
   var $items = array();
   
-  //debug:
-  var $debug = '';
+//debug:
+var $debug = '';
   
   //CONSTRUCTOR FUNCTION
   function cart() {}
   
   //GET CART CONTENTS
   function get_contents() {
+    $stores = array(); //to contain all stores, with items
     $items = array(); //to contain all the items to return
     foreach($this->items as $store => $s_items) {
     
@@ -59,9 +60,13 @@ $item['option'] = $variation['options'];
         }
       }
       
+      $stores[$store] = $items;
+      $items = array();
     }
     
-    return $items;
+    unset($items);
+    //return $items;
+    return $stores;
   }//get_contents()
   
   //ADD AN ITEM
@@ -282,7 +287,7 @@ $item['option'] = $variation['options'];
 		// ASSIGN USER CONFIG VALUES AS POST VAR LITERAL INDICES
 		// INDICES ARE THE HTML NAME ATTRIBUTES FROM THE USERS ADD-TO-CART FORM
 		$store_id = $_POST[$store_id];
-		  if ($store_id == "undefined") { $store_id = 0; }
+		  if ($store_id == "undefined") { $store_id = ''; }
 		$item_id = $_POST[$item_id];
 		$item_qty = $_POST[$item_qty];
 		$item_price = $_POST[$item_price];

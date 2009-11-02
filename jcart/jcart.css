@@ -21,6 +21,10 @@ http://conceptlogic.com/jcart/
 #jcart th#header {  }
 $jcart th#footer {  }
 
+/*store*/
+  #jcart .jcart-store-row {background-color:#ddd;}
+  #jcart .jcart-store-name {font-weight:bold;}
+
 #jcart td.jcart-item-qty { width:25%; }
 #jcart td.jcart-item-name { width:50%; font-weight:bold; }
 #jcart td.jcart-item-price { width:25%; font-weight:bold; text-align:right; }
