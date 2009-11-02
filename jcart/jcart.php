@@ -19,12 +19,14 @@ class jcart {
   var $itemcount = 0;
   var $items = array();
   
+  //debug:
+  var $debug = '';
+  
   //CONSTRUCTOR FUNCTION
   function cart() {}
   
   //GET CART CONTENTS
   function get_contents() {
-    $stores = array(); //to contain all stores, with items
     $items = array(); //to contain all the items to return
     foreach($this->items as $store => $s_items) {
     
@@ -34,8 +36,8 @@ class jcart {
         $item['store'] = $store;
         $item['id'] = $key;
         $item['name'] = $tmp_item['name'];
+        $b_price = $tmp_item['price'];
         foreach($tmp_item['variation'] as $key => $variation) {
-          $b_price = $this->return_bulk_price($tmp_item['price'], $variation['qty']);
           $item['variation'] = $key;
     
           $item['qty'] = $variation['qty'];
@@ -57,13 +59,9 @@ $item['option'] = $variation['options'];
         }
       }
       
-      $stores[$store] = $items;
-      $items = array();
     }
     
-    unset($items);
-    //return $items;
-    return $stores;
+    return $items;
   }//get_contents()
   
   //ADD AN ITEM
@@ -74,7 +72,7 @@ $item['option'] = $variation['options'];
       $valid_item_qty = true;
     }
     //Ensure price is a floating point number (can be negative, ie: discount)
-    if (is_numeric($item_price[0])) {
+    if (is_numeric($item_price)) {
       $valid_item_price = true;
     }
     //If valid qty/price add item to cart
@@ -104,11 +102,11 @@ $item['option'] = $variation['options'];
           }
         } else {
           //if item is not aleady in cart, add
-          $this->items[$store_id][$item_id] = array("name"=>$name,"price"=>$item_price,"variation"=>array(array("qty"=>$item_qty,"options"=>$item_info)));
+          $this->items[$store_id][$item_id] = array("price"=>$item_price,"name"=>$name,"variation"=>array(array("qty"=>$item_qty,"options"=>$item_info)));
         }
       } else {
         //create store, add product
-        $this->items[$store_id] = array($item_id=>array("name"=>$name,"price"=>$item_price,"variation"=>array(array("qty"=>$item_qty,"options"=>$item_info))));
+        $this->items[$store_id] = array($item_id=>array("price"=>$item_price,"name"=>$name,"variation"=>array(array("qty"=>$item_qty,"options"=>$item_info))));
       }
 
       $this->_update_total();
@@ -171,7 +169,7 @@ $item['option'] = $variation['options'];
 						$this->del_item($item_id[0], $item_id[1]);
 					} else {
 						//UPDATE THE ITEM
-						$this->update_item($item_id[2], $item_id[0], $item_id[1], $update_item_qty);
+						$this->update_item($item_id[0], $item_id[1], $update_item_qty);
 					}
 
 					//INCREMENT INDEX FOR THE NEXT ITEM
@@ -249,7 +247,7 @@ $item['option'] = $variation['options'];
           foreach($variation['options'] as $option) {
             $option_price += $option['price'];
           }
-          $variation_price += ($item['price'][0] + $option_price) * $variation['qty'];
+          $variation_price += ($item['price'] + $option_price) * $variation['qty'];
           
           //TOTAL NUMBER OF ITEMS IN CART
           $this->itemcount += $variation['qty'];
@@ -272,18 +270,6 @@ $item['option'] = $variation['options'];
       }
     }
   }//_update_total()
-		
-//bulk
-  function return_bulk_price($price, $qty) {
-    $bulk_price = 0;
-     //bad way to do this, but since we ksort()ed the bulk array, it works
-    foreach ($price as $key => $val) {
-      if ($qty >= $key) {
-        $bulk_price = $val;
-      }
-    }
-    return $bulk_price;
-  }//return_bulk_price()
   
 /* ************************************************************************** */
   
@@ -296,37 +282,17 @@ $item['option'] = $variation['options'];
 		// ASSIGN USER CONFIG VALUES AS POST VAR LITERAL INDICES
 		// INDICES ARE THE HTML NAME ATTRIBUTES FROM THE USERS ADD-TO-CART FORM
 		$store_id = $_POST[$store_id];
-		  if ($store_id == "undefined") { $store_id = ''; }
+		  if ($store_id == "undefined") { $store_id = 0; }
 		$item_id = $_POST[$item_id];
 		$item_qty = $_POST[$item_qty];
 		$item_price = $_POST[$item_price];
 		$item_name = $_POST[$item_name];
     $item_option = $_POST[$item_options];
       if ($item_option == 'undefined') { $item_option = array(); }
-		//bulk
-		$item_bulk = $_POST[$item_bulk];
 
 		// ADD AN ITEM
 		if ($_POST[$item_add])
 			{
-			//bulk
-			// checking for 'undefined' is admittedly hackish, but works.
-			// 'undefined' occurs when JavaScript (AJAX) can't find optional bulk input
-			// '' occurs when field does not appear in PHP POST array
-			if ($item_bulk === 'undefined' || $item_bulk === '' || empty($item_bulk)) {
-        $item_bulk = array(0=>$item_price);
-      } else {
-        $temp_bulk = array();
-        $temp_bulk = explode(';', $item_bulk);
-        $e_pair = $item_bulk = array();
-        foreach ($temp_bulk as $pair) {
-          $e_pair = explode(',', $pair);
-          $item_bulk[$e_pair[0]] = $e_pair[1];
-        }
-        $item_bulk[0] = $item_price;
-        ksort($item_bulk);
-      }
-      $item_price = $item_bulk;
 //
 //			$item_added = $this->add_item($item_id, $item_qty, $item_price, $item_name);
       $options = $item_option;
