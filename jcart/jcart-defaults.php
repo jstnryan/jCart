@@ -27,4 +27,8 @@ if (!$jcart['text']['price_error']) $jcart['text']['price_error']						= 'Invali
 if (!$jcart['text']['quantity_error']) $jcart['text']['quantity_error']					= 'Item quantities must be whole numbers!';
 if (!$jcart['text']['checkout_error']) $jcart['text']['checkout_error']					= 'Your order could not be processed!';
 
+//store
+if (!$jcart['text']['store_text']) $jcart['text']['store_text']             = 'Store: ';
+if (!$jcart['text']['store_undefined']) $jcart['text']['store_undefined']   = 'undefined';
+
 ?>

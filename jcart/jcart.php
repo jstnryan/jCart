@@ -1,186 +1,193 @@
 <?php
-
-// JCART v1.1
+// JCART v1.2
 // http://conceptlogic.com/jcart/
-
 // SESSION BASED SHOPPING CART CLASS FOR JCART
-
 /**********************************************************************
 Based on Webforce Cart v.1.5
 (c) 2004-2005 Webforce Ltd, NZ
 http://www.webforce.co.nz/cart/
 **********************************************************************/
+//Additional code by Justin Ryan, http://jstnryan.com
 
 // USER CONFIG
 include_once('jcart-config.php');
-
 // DEFAULT CONFIG VALUES
 include_once('jcart-defaults.php');
 
-// JCART
 class jcart {
-	var $total = 0;
-	var $itemcount = 0;
-	var $items = array();
-	var $itemprices = array();
-	var $itemqtys = array();
-	var $itemname = array();
+  var $total = 0;
+  var $itemcount = 0;
+  var $items = array();
+  
+  //CONSTRUCTOR FUNCTION
+  function cart() {}
+  
+  //GET CART CONTENTS
+  function get_contents() {
+    $stores = array(); //to contain all stores, with items
+    $items = array(); //to contain all the items to return
+    foreach($this->items as $store => $s_items) {
+    
+      foreach($s_items as $key => $tmp_item) {
+        $item = FALSE;
+        
+        $item['store'] = $store;
+        $item['id'] = $key;
+        $item['name'] = $tmp_item['name'];
+        foreach($tmp_item['variation'] as $key => $variation) {
+          $b_price = $this->return_bulk_price($tmp_item['price'], $variation['qty']);
+          $item['variation'] = $key;
+    
+          $item['qty'] = $variation['qty'];
+          $opt_price = 0;
+//$opt_str = ""; //possibly return this as array instead
+//$opt = array();
+          foreach($variation['options'] as $k => $v) {
+            $opt_price += $v['price'];
+//$opt_str = $opt_str . $v['name'] . ": " . $v['value'] . ", ";
+//$opt[$v['name']] = $v['value'];
+          }
+//$item['option'] = substr($opt_str, 0, strlen($opt_str) - 2);
+//$item['option'] = $opt;
+$item['option'] = $variation['options'];
+          $item['price'] = $b_price + $opt_price;
+          $item['subtotal'] = $variation['qty'] * $item['price'];
+          
+          $items[] = $item;
+        }
+      }
+      
+      $stores[$store] = $items;
+      $items = array();
+    }
+    
+    unset($items);
+    //return $items;
+    return $stores;
+  }//get_contents()
+  
+  //ADD AN ITEM
+  function add_item($store_id, $item_id, $item_qty=1, $item_price, $item_info=array('name'=>"",'options'=>array())) {
+    $valid_item_qty = $valid_item_price = false;
+    //Ensure quantity is POSITIVE integer or Zero
+    if (preg_match("/^[0-9]+$/i", $item_qty) && ($item_qty > -1)) {
+      $valid_item_qty = true;
+    }
+    //Ensure price is a floating point number (can be negative, ie: discount)
+    if (is_numeric($item_price[0])) {
+      $valid_item_price = true;
+    }
+    //If valid qty/price add item to cart
+    if ($valid_item_qty && $valid_item_price) {
+      //Check if store_id is already in cart
+      $name = $item_info['item-name'];
+      unset($item_info['item-name']);
+      if (empty($item_info)) { $item_info = array(); }
+      
+      if ($this->items[$store_id]) {
+        //store exists
+        //Check to see if already in cart
+        if ($this->items[$store_id][$item_id]) {
+          //Some variation of this item already in cart
+          $found_match = false;
+          //Look for matching set of options
+          foreach ($this->items[$store_id][$item_id]['variation'] as $key => $var) {
+            if ($var['options'] === $item_info) { $found_match = $key; break; }
+          }
+          unset($key, $var); //don't know if unset is actually necessary here -jstn
+          if ($found_match === false) {
+            //Match not found, add as a new variation
+            $this->items[$store_id][$item_id]['variation'][] = array("qty"=>$item_qty,"options"=>$item_info);
+          } else {
+            //Match found, increase quantity of matching variation
+            $this->items[$store_id][$item_id]['variation'][$found_match]['qty'] = $item_qty + $this->items[$store_id][$item_id]['variation'][$found_match]['qty'];
+          }
+        } else {
+          //if item is not aleady in cart, add
+          $this->items[$store_id][$item_id] = array("name"=>$name,"price"=>$item_price,"variation"=>array(array("qty"=>$item_qty,"options"=>$item_info)));
+        }
+      } else {
+        //create store, add product
+        $this->items[$store_id] = array($item_id=>array("name"=>$name,"price"=>$item_price,"variation"=>array(array("qty"=>$item_qty,"options"=>$item_info))));
+      }
 
-	// CONSTRUCTOR FUNCTION
-	function cart() {}
+      $this->_update_total();
+      return true;
 
-	// GET CART CONTENTS
-	function get_contents()
-		{
-		$items = array();
-		foreach($this->items as $tmp_item)
-			{
-			$item = FALSE;
+    //If product had invalid qty/price return error
+    } else if (!$valid_item_qty) {
+      return 'qty';
+    } else if (!$valid_item_price) {
+      return 'price';
+    }
+  }//add_item()
+  
+  //UPDATE AN ITEM
+  function update_item($store_id, $item_id, $item_variation=0, $item_qty) {
+    //Ensure quantity is POSITIVE integer or Zero
+    if (preg_match("/^[0-9-]+$/i", $item_qty) && ($item_qty > -1)) {
+      if ($item_qty < 1) {
+        $this->del_item($store_id, $item_id, $item_variation);
+      } else {
+        $this->items[$store_id][$item_id]['variation'][$item_variation]['qty'] = $item_qty;
+      }
+      $this->_update_total();
+      return true;
+    }
+  }//update_item()
 
-			$item['id'] = $tmp_item;
-			$item['qty'] = $this->itemqtys[$tmp_item];
-			$item['price'] = $this->itemprices[$tmp_item];
-			$item['name'] = $this->itemname[$tmp_item];
-			$item['subtotal'] = $item['qty'] * $item['price'];
-			$items[] = $item;
-			}
-		return $items;
+	//UPDATE THE ENTIRE CART
+	//IT IS POSSIBLE FOR VISITOR TO CHANGE MULTIPLE FIELDS BEFORE CLICKING UPDATE
+	//(ONLY USED WHEN JAVASCRIPT IS DISABLED, ELSE THE CART IS UPDATED ONKEYUP)
+  function update_cart() {
+//DOUG: it does not appear that we need this statement:
+/*
+    //POST VALUE IS AN ARRAY OF ALL ITEM IDs IN THE CART
+		if (is_array($_POST['jcart_item_ids'])) {
+			//TREAT VALUES AS A STRING FOR VALIDATION
+      $item_ids = implode($_POST['jcart_item_ids']);
 		}
-
-
-	// ADD AN ITEM
-	function add_item($item_id, $item_qty=1, $item_price, $item_name)
-		{
-		// VALIDATION
-		$valid_item_qty = $valid_item_price = false;
-
-		// IF THE ITEM QTY IS AN INTEGER, OR ZERO
-		if (preg_match("/^[0-9-]+$/i", $item_qty))
-			{
-			$valid_item_qty = true;
-			}
-		// IF THE ITEM PRICE IS A FLOATING POINT NUMBER
-		if (is_numeric($item_price))
-			{
-			$valid_item_price = true;
-			}
-
-		// ADD THE ITEM
-		if ($valid_item_qty !== false && $valid_item_price !== false)
-			{
-			// IF THE ITEM IS ALREADY IN THE CART, INCREASE THE QTY
-			if($this->itemqtys[$item_id] > 0)
-				{
-				$this->itemqtys[$item_id] = $item_qty + $this->itemqtys[$item_id];
-				$this->_update_total();
-				}
-			// THIS IS A NEW ITEM
-			else
-				{
-				$this->items[] = $item_id;
-				$this->itemqtys[$item_id] = $item_qty;
-				$this->itemprices[$item_id] = $item_price;
-				$this->itemname[$item_id] = $item_name;
-				}
-			$this->_update_total();
-			return true;
-			}
-
-		else if	($valid_item_qty !== true)
-			{
-			$error_type = 'qty';
-			return $error_type;
-			}
-		else if	($valid_item_price !== true)
-			{
-			$error_type = 'price';
-			return $error_type;
-			}
-		}
-
-
-	// UPDATE AN ITEM
-	function update_item($item_id, $item_qty)
-		{
-		// IF THE ITEM QTY IS AN INTEGER, OR ZERO
-		// UPDATE THE ITEM
-		if (preg_match("/^[0-9-]+$/i", $item_qty))
-			{
-			if($item_qty < 1)
-				{
-				$this->del_item($item_id);
-				}
-			else
-				{
-				$this->itemqtys[$item_id] = $item_qty;
-				}
-			$this->_update_total();
-			return true;
-			}
-		}
-
-
-	// UPDATE THE ENTIRE CART
-	// VISITOR MAY CHANGE MULTIPLE FIELDS BEFORE CLICKING UPDATE
-	// ONLY USED WHEN JAVASCRIPT IS DISABLED
-	// WHEN JAVASCRIPT IS ENABLED, THE CART IS UPDATED ONKEYUP
-	function update_cart()
-		{
-		// POST VALUE IS AN ARRAY OF ALL ITEM IDs IN THE CART
-		if (is_array($_POST['jcart_item_ids']))
-			{
-			// TREAT VALUES AS A STRING FOR VALIDATION
-			$item_ids = implode($_POST['jcart_item_ids']);
-			}
-
-		// POST VALUE IS AN ARRAY OF ALL ITEM QUANTITIES IN THE CART
-		if (is_array($_POST['jcart_item_qty']))
-			{
-			// TREAT VALUES AS A STRING FOR VALIDATION
+*/
+    //POST VALUE IS AN ARRAY OF ALL ITEM QUANTITIES IN THE CART
+		if (is_array($_POST['jcart_item_qty'])) {
+		  //TREAT VALUES AS A STRING FOR VALIDATION
 			$item_qtys = implode($_POST['jcart_item_qty']);
-			}
+		}
 
-		// IF NO ITEM IDs, THE CART IS EMPTY
-		if ($_POST['jcart_item_id'])
-			{
-			// IF THE ITEM QTY IS AN INTEGER, OR ZERO, OR EMPTY
-			// UPDATE THE ITEM
-			if (preg_match("/^[0-9-]+$/i", $item_qtys) || $item_qtys == '')
-				{
-				// THE INDEX OF THE ITEM AND ITS QUANTITY IN THEIR RESPECTIVE ARRAYS
+		//IF NO ITEM IDs, THE CART IS EMPTY
+		if ($_POST['jcart_item_id']) {
+			//IF THE ITEM QTY IS AN INTEGER, OR ZERO, OR EMPTY
+			//UPDATE THE ITEM
+			if (preg_match("/^[0-9-]+$/i", $item_qtys) || $item_qtys == '') {
+				//THE INDEX OF THE ITEM AND ITS QUANTITY IN THEIR RESPECTIVE ARRAYS
 				$count = 0;
 
-				// FOR EACH ITEM IN THE CART
-				foreach ($_POST['jcart_item_id'] as $item_id)
-					{
-					// GET THE ITEM QTY AND DOUBLE-CHECK THAT THE VALUE IS AN INTEGER
+				foreach ($_POST['jcart_item_id'] as $item_id) {
+				  $item_id = explode(",", $item_id);
+					//GET THE ITEM QTY AND DOUBLE-CHECK THAT THE VALUE IS AN INTEGER
 					$update_item_qty = intval($_POST['jcart_item_qty'][$count]);
 
-					if($update_item_qty < 1)
-						{
-						$this->del_item($item_id);
-						}
-					else
-						{
-						// UPDATE THE ITEM
-						$this->update_item($item_id, $update_item_qty);
-						}
-
-					// INCREMENT INDEX FOR THE NEXT ITEM
-					$count++;
+					if ($update_item_qty < 1) {
+						$this->del_item($item_id[0], $item_id[1]);
+					} else {
+						//UPDATE THE ITEM
+						$this->update_item($item_id[2], $item_id[0], $item_id[1], $update_item_qty);
 					}
-				return true;
+
+					//INCREMENT INDEX FOR THE NEXT ITEM
+					$count++;
 				}
+				return true;
 			}
-		// IF NO ITEMS IN THE CART, RETURN TRUE TO PREVENT UNNECSSARY ERROR MESSAGE
+		}
+		//IF NO ITEMS IN THE CART, RETURN TRUE TO PREVENT UNNECSSARY ERROR MESSAGE
 		else if (!$_POST['jcart_item_id'])
 			{
 			return true;
 			}
-		}
-
-
-	// REMOVE AN ITEM
+  }//update_cart()
+  
+  //REMOVE AN ITEM
 	/*
 	GET VAR COMES FROM A LINK, WITH THE ITEM ID TO BE REMOVED IN ITS QUERY STRING
 	AFTER AN ITEM IS REMOVED ITS ID STAYS SET IN THE QUERY STRING, PREVENTING THE SAME ITEM FROM BEING ADDED BACK TO THE CART
@@ -191,52 +198,95 @@ class jcart {
 	IF USING AN INPUT WITH TYPE IMAGE, INTERNET EXPLORER DOES NOT SUBMIT THE VALUE, ONLY X AND Y COORDINATES WHERE BUTTON WAS CLICKED
 	CAN'T USE A HIDDEN INPUT EITHER SINCE THE CART FORM HAS TO ENCOMPASS ALL ITEMS TO RECALCULATE TOTAL WHEN A QUANTITY IS CHANGED, WHICH MEANS THERE ARE MULTIPLE REMOVE BUTTONS AND NO WAY TO ASSOCIATE THEM WITH THE CORRECT HIDDEN INPUT
 	*/
-	function del_item($item_id)
-		{
-		$ti = array();
-		$this->itemqtys[$item_id] = 0;
-		foreach($this->items as $item)
-			{
-			if($item != $item_id)
-				{
-				$ti[] = $item;
-				}
-			}
-		$this->items = $ti;
-		$this->_update_total();
-		}
+  function del_item($store_id, $item_id, $item_variation=0) {
+    if ($item_variation < 0) {
+      //This statement is not neccessary, but I have included this function
+      //  for future use, to implement a feature to delete ALL variations
+      //  of a product at the same time by sending ($item_variation = -1) - jstn
+      unset($this->items[$store_id][$item_id]);
+    } else {
+      //Delete only selected variation
+      if (sizeof($this->items[$store_id][$item_id]['variation']) > 1) {
+        //If there are multiple options for this $item_id,
+        //  delete only selected variation
+        unset($this->items[$store_id][$item_id]['variation'][$item_variation]);
+      } else {
+        //If this is the last variation for this $item_id,
+        //  delete the entire item
+        unset($this->items[$store_id][$item_id]);
+      }
+      //Instead of above, we could set variation QTY to zero, but the array
+      //  will grow very large if a lot of products are added and removed - jstn
+      /*
+      $this->items[$item_id]['variation'][$item_variation]['qty'] = 0;
+      */
+    }
+    if (sizeof($this->items[$store_id]) < 1) {
+      //removed last item from store, remove store
+      unset($this->items[$store_id]);
+    }
+    $this->_update_total();
+  }//del_item()
+  
+  //EMPTY THE CART
+  function empty_cart() {
+    $this->total = 0;
+    $this->itemcount = 0;
+    $this->items = array();
+  }//empty_cart()
+  
+  //INTERNAL FUNCTION WHICH RECALCULATES COMBINED CART TOTALS
+  function _update_total() {
+    $this->itemcount = 0;
+    $this->total = 0;
+    if (sizeof($this->items > 0)) {
+      foreach($this->items as $store) {
+        foreach($store as $item) {
 
-
-	// EMPTY THE CART
-	function empty_cart()
-		{
-		$this->total = 0;
-		$this->itemcount = 0;
-		$this->items = array();
-		$this->itemprices = array();
-		$this->itemqtys = array();
-		$this->itemname = array();
-		}
-
-
-	// INTERNAL FUNCTION TO RECALCULATE TOTAL
-	function _update_total()
-		{
-		$this->itemcount = 0;
-		$this->total = 0;
-		if(sizeof($this->items > 0))
-			{
-			foreach($this->items as $item)
-				{
-				$this->total = $this->total + ($this->itemprices[$item] * $this->itemqtys[$item]);
-
-				// TOTAL ITEMS IN CART (ORIGINAL wfCart COUNTED TOTAL NUMBER OF LINE ITEMS)
-				$this->itemcount += $this->itemqtys[$item];
-				}
-			}
-		}
-
-
+        $variation_price = 0;
+        foreach($item['variation'] as $variation) {
+          $option_price = 0;
+          foreach($variation['options'] as $option) {
+            $option_price += $option['price'];
+          }
+          $variation_price += ($item['price'][0] + $option_price) * $variation['qty'];
+          
+          //TOTAL NUMBER OF ITEMS IN CART
+          $this->itemcount += $variation['qty'];
+          //ORIGINAL wfCart COUNTED TOTAL NUMBER OF LINE ITEMS
+          //  This could be implemented IN ADDITION TO above total by declaring
+          //  another variable in the jcart class and using the following - jstn
+          /*
+          $this->itemcount++;
+          */
+          //  The placement of this line is significant. Where it is now, it
+          //  will count the number of unique variations of all products. Inside
+          //  the foreach() directly above, count total number of all items.
+          //  Outside of the current loop, will count only number of product
+          //  IDs, but not ID variations.
+        }
+        $this->total += $variation_price;
+        
+        }
+        
+      }
+    }
+  }//_update_total()
+		
+//bulk
+  function return_bulk_price($price, $qty) {
+    $bulk_price = 0;
+     //bad way to do this, but since we ksort()ed the bulk array, it works
+    foreach ($price as $key => $val) {
+      if ($qty >= $key) {
+        $bulk_price = $val;
+      }
+    }
+    return $bulk_price;
+  }//return_bulk_price()
+  
+/* ************************************************************************** */
+  
 	// PROCESS AND DISPLAY CART
 	function display_cart($jcart)
 		{
@@ -245,15 +295,77 @@ class jcart {
 
 		// ASSIGN USER CONFIG VALUES AS POST VAR LITERAL INDICES
 		// INDICES ARE THE HTML NAME ATTRIBUTES FROM THE USERS ADD-TO-CART FORM
+		$store_id = $_POST[$store_id];
+		  if ($store_id == "undefined") { $store_id = ''; }
 		$item_id = $_POST[$item_id];
 		$item_qty = $_POST[$item_qty];
 		$item_price = $_POST[$item_price];
 		$item_name = $_POST[$item_name];
+    $item_option = $_POST[$item_options];
+      if ($item_option == 'undefined') { $item_option = array(); }
+		//bulk
+		$item_bulk = $_POST[$item_bulk];
 
 		// ADD AN ITEM
 		if ($_POST[$item_add])
 			{
-			$item_added = $this->add_item($item_id, $item_qty, $item_price, $item_name);
+			//bulk
+			// checking for 'undefined' is admittedly hackish, but works.
+			// 'undefined' occurs when JavaScript (AJAX) can't find optional bulk input
+			// '' occurs when field does not appear in PHP POST array
+			if ($item_bulk === 'undefined' || $item_bulk === '' || empty($item_bulk)) {
+        $item_bulk = array(0=>$item_price);
+      } else {
+        $temp_bulk = array();
+        $temp_bulk = explode(';', $item_bulk);
+        $e_pair = $item_bulk = array();
+        foreach ($temp_bulk as $pair) {
+          $e_pair = explode(',', $pair);
+          $item_bulk[$e_pair[0]] = $e_pair[1];
+        }
+        $item_bulk[0] = $item_price;
+        ksort($item_bulk);
+      }
+      $item_price = $item_bulk;
+//
+//			$item_added = $this->add_item($item_id, $item_qty, $item_price, $item_name);
+      $options = $item_option;
+/* USE THIS BLOCK FOR STANDARD ARRAY FORMATTING */
+      // The following if statment block ensures proper formatting of product
+      //  options. It also tries to extract price modifiers for each option. If
+      //  no price was provided, a price of zero is explicitly stated.
+      if (count($options) > 0) {
+        foreach ($options as $key => &$option) {
+          if ($option['value']) {
+            if (!$option['price']) { 
+              $pos = strrpos($option['value'], ','); //could use explode() but there may be multiple commas - jstn
+              if ($pos !== false) {
+                $option['price'] = substr($option['value'],$pos+1);
+                $option['value'] = substr($option['value'],0,$pos);
+                if ($pos == 0) {
+                  $option['value'] = $option['price'];
+                }
+                //double check price is valid
+                if (preg_match('/^[-|+]?\d+(?:\.\d+)?$/', $option['price']) === (0|false)) { $option['value'] = $option['value'] . "," . $option['price']; $option['price'] = "0.00"; }
+              } else {
+                $option['price'] = "0.00";
+              }
+            } else {
+              //double check price is valid
+              if (preg_match('/^[-|+]?\d+(?:\.\d+)?$/', $option['price']) === (0|false)) { $option['price'] = "0.00"; }
+            }
+          } else {
+            //If a CHECKBOX is used, but not selected, ['value'] will be empty,
+            //  so we remove the blank option from the array
+            unset($options[$key]);
+          }
+        }
+        unset($option);
+      }
+/* END STANDARD BLOCK */
+      $options['item-name'] = $item_name;
+      $item_added = $this->add_item($store_id, $item_id, $item_qty, $item_price, $options);
+//
 			// IF NOT TRUE THE ADD ITEM FUNCTION RETURNS THE ERROR TYPE
 			if ($item_added !== true)
 				{
@@ -274,7 +386,9 @@ class jcart {
 		// CHECKING POST VALUE AGAINST $text ARRAY FAILS?? HAVE TO CHECK AGAINST $jcart ARRAY
 		if ($_POST['jcart_update_item'] == $jcart['text']['update_button'])
 			{
-			$item_updated = $this->update_item($_POST['item_id'], $_POST['item_qty']);
+			$which = explode(",", $_POST['item_id']);
+			$item_updated = $this->update_item($which[2], $which[0], $which[1], $_POST['item_qty']);
+			unset($which);
 			if ($item_updated !== true)
 				{
 				$error_message = $text['quantity_error'];
@@ -294,7 +408,8 @@ class jcart {
 		// REMOVE AN ITEM
 		if($_GET['jcart_remove'] && !$_POST[$item_add] && !$_POST['jcart_update_cart'] && !$_POST['jcart_check_out'])
 			{
-			$this->del_item($_GET['jcart_remove']);
+			$which = explode(",", $_GET['jcart_remove']);
+			$this->del_item($which[2], $which[0], $which[1]);
 			}
 
 		// EMPTY THE CART
@@ -332,10 +447,24 @@ class jcart {
 			{
 			$form_action = $path . 'jcart-gateway.php';
 			}
-
+		//REPLACE PREVIOUS BLOCK WITH BELOW FOR WordPress Plugin USE
+		/*
+		if ($is_checkout == true)
+			{
+			$form_action = WP_PLUGIN_URL . '/jcart/jcart-gateway.php';
+			}
+		else
+			{
+			$form_action = '/' . $form_action;
+			}
+		*/
+		
+//DEPRECIATED as of jCart v1.2
+/*
 		// DEFAULT INPUT TYPE
 		// CAN BE OVERRIDDEN IF USER SETS PATHS FOR BUTTON IMAGES
 		$input_type = 'submit';
+*/
 
 		// IF THIS ERROR IS TRUE THE VISITOR UPDATED THE CART FROM THE CHECKOUT PAGE USING AN INVALID PRICE FORMAT
 		// PASSED AS A SESSION VAR SINCE THE CHECKOUT PAGE USES A HEADER REDIRECT
@@ -346,6 +475,52 @@ class jcart {
 			unset($_SESSION['quantity_error']);
 			}
 
+		// SET CURRENCY SYMBOL BASED ON SELECTED CURRENCY CODE
+		// Wikipedia is a good source for actual symbols (some not available through
+		//  escape codes) http://en.wikipedia.org/wiki/Currency_sign - jstn
+		switch($jcart['paypal_currency'])
+			{
+			case 'EUR':
+				$text['currency_symbol'] = '&#128;';
+				break;
+			case 'GBP':
+				$text['currency_symbol'] = '&#163;';
+				break;
+			case 'JPY':
+				$text['currency_symbol'] = '&#165;';
+				break;
+			case 'CHF':
+				$text['currency_symbol'] = 'CHF&nbsp;'; // SwF, SFr, S?
+				break;
+			case 'SEK':
+			case 'DKK':
+			case 'NOK':
+				$text['currency_symbol'] = 'kr&nbsp;';
+				break;
+			case 'PLN':
+				$text['currency_symbol'] = 'z&#322;&nbsp;';
+				break;
+			case 'HUF':
+				$text['currency_symbol'] = 'Ft&nbsp;';
+				break;
+			case 'CZK':
+				$text['currency_symbol'] = 'K&#269;&nbsp;';
+				break;
+			case 'ILS':
+				$text['currency_symbol'] = '&#8362;&nbsp;';
+				break;
+			case 'AUD':
+			case 'CAD':
+			case 'USD':
+			case 'NZD':
+			case 'HKD':
+			case 'SGD':
+			case 'MXN':
+			default:
+				$text['currency_symbol'] = '$';
+				break;
+			}
+
 		// OUTPUT THE CART
 
 		// IF THERE'S AN ERROR MESSAGE WRAP IT IN SOME HTML
@@ -354,100 +529,8 @@ class jcart {
 			$error_message = "<p class='jcart-error'>$error_message</p>";
 			}
 
-		// DISPLAY THE CART HEADER
-		echo "<!-- BEGIN JCART -->\n<div id='jcart'>\n";
-		echo "\t$error_message\n";
-		echo "\t<form method='post' action='$form_action'>\n";
-		echo "\t\t<fieldset>\n";
-		echo "\t\t\t<table border='1'>\n";
-		echo "\t\t\t\t<tr>\n";
-		echo "\t\t\t\t\t<th id='jcart-header' colspan='3'>\n";
-		echo "\t\t\t\t\t\t<strong id='jcart-title'>" . $text['cart_title'] . "</strong> (" . $this->itemcount . "&nbsp;" . $text['items_in_cart'] .")\n";
-		echo "\t\t\t\t\t</th>\n";
-		echo "\t\t\t\t</tr>". "\n";
-
-		// IF ANY ITEMS IN THE CART
-		if($this->itemcount > 0)
-			{
-
-			// DISPLAY LINE ITEMS
-			foreach($this->get_contents() as $item)
-				{
-				echo "\t\t\t\t<tr>\n";
-
-				// ADD THE ITEM ID AS THE INPUT ID ATTRIBUTE
-				// THIS ALLOWS US TO ACCESS THE ITEM ID VIA JAVASCRIPT ON QTY CHANGE, AND THEREFORE UPDATE THE CORRECT ITEM
-				// NOTE THAT THE ITEM ID IS ALSO PASSED AS A SEPARATE FIELD FOR PROCESSING VIA PHP
-				echo "\t\t\t\t\t<td class='jcart-item-qty'>\n";
-				echo "\t\t\t\t\t\t<input type='text' size='2' id='jcart-item-id-" . $item['id'] . "' name='jcart_item_qty[ ]' value='" . $item['qty'] . "' />\n";
-				echo "\t\t\t\t\t</td>\n";
-				echo "\t\t\t\t\t<td class='jcart-item-name'>\n";
-				echo "\t\t\t\t\t\t" . $item['name'] . "<input type='hidden' name='jcart_item_name[ ]' value='" . $item['name'] . "' />\n";
-				echo "\t\t\t\t\t\t<input type='hidden' name='jcart_item_id[ ]' value='" . $item['id'] . "' />\n";
-				echo "\t\t\t\t\t</td>\n";
-				echo "\t\t\t\t\t<td class='jcart-item-price'>\n";
-				echo "\t\t\t\t\t\t<span>" . $text['currency_symbol'] . number_format($item['subtotal'],2) . "</span><input type='hidden' name='jcart_item_price[ ]' value='" . $item['price'] . "' />\n";
-				echo "\t\t\t\t\t\t<a class='jcart-remove' href='?jcart_remove=" . $item['id'] . "'>" . $text['remove_link'] . "</a>\n";
-				echo "\t\t\t\t\t</td>\n";
-				echo "\t\t\t\t</tr>\n";
-				}
-			}
-
-		// THE CART IS EMPTY
-		else
-			{
-			echo "\t\t\t\t<tr><td colspan='3' class='empty'>" . $text['empty_message'] . "</td></tr>\n";
-			}
-
-		// DISPLAY THE CART FOOTER
-		echo "\t\t\t\t<tr>\n";
-		echo "\t\t\t\t\t<th id='jcart-footer' colspan='3'>\n";
-
-		// IF THIS IS THE CHECKOUT HIDE THE CART CHECKOUT BUTTON
-		if ($is_checkout !== true)
-			{
-			if ($button['checkout']) { $input_type = 'image'; $src = ' src="' . $button['checkout'] . '" alt="' . $text['checkout_button'] . '" title="" ';	}
-			echo "\t\t\t\t\t\t<input type='" . $input_type . "' " . $src . "id='jcart-checkout' name='jcart_checkout' class='jcart-button' value='" . $text['checkout_button'] . "' />\n";
-			}
-
-		echo "\t\t\t\t\t\t<span id='jcart-subtotal'>" . $text['subtotal'] . ": <strong>" . $text['currency_symbol'] . number_format($this->total,2) . "</strong></span>\n";
-		echo "\t\t\t\t\t</th>\n";
-		echo "\t\t\t\t</tr>\n";
-		echo "\t\t\t</table>\n\n";
-
-		echo "\t\t\t<div class='jcart-hide'>\n";
-		if ($button['update']) { $input_type = 'image'; $src = ' src="' . $button['update'] . '" alt="' . $text['update_button'] . '" title="" ';	}
-		echo "\t\t\t\t<input type='" . $input_type . "' " . $src ."name='jcart_update_cart' value='" . $text['update_button'] . "' class='jcart-button' />\n";
-		if ($button['empty']) { $input_type = 'image'; $src = ' src="' . $button['empty'] . '" alt="' . $text['empty_button'] . '" title="" ';	}
-		echo "\t\t\t\t<input type='" . $input_type . "' " . $src ."name='jcart_empty' value='" . $text['empty_button'] . "' class='jcart-button' />\n";
-		echo "\t\t\t</div>\n";
-
-		// IF THIS IS THE CHECKOUT DISPLAY THE PAYPAL CHECKOUT BUTTON
-		if ($is_checkout == true)
-			{
-			// HIDDEN INPUT ALLOWS US TO DETERMINE IF WE'RE ON THE CHECKOUT PAGE
-			// WE NORMALLY CHECK AGAINST REQUEST URI BUT AJAX UPDATE SETS VALUE TO jcart-relay.php
-			echo "\t\t\t<input type='hidden' id='jcart-is-checkout' name='jcart_is_checkout' value='true' />\n";
-
-			// SEND THE URL OF THE CHECKOUT PAGE TO jcart-gateway.php
-			// WHEN JAVASCRIPT IS DISABLED WE USE A HEADER REDIRECT AFTER THE UPDATE OR EMPTY BUTTONS ARE CLICKED
-			$protocol = 'http://'; if (!empty($_SERVER['HTTPS'])) { $protocol = 'https://'; }
-			echo "\t\t\t<input type='hidden' id='jcart-checkout-page' name='jcart_checkout_page' value='" . $protocol . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] . "' />\n";
-
-			// PAYPAL CHECKOUT BUTTON
-			if ($button['paypal_checkout'])	{ $input_type = 'image'; $src = ' src="' . $button['paypal_checkout'] . '" alt="' . $text['checkout_paypal_button'] . '" title="" '; }
-			echo "\t\t\t<input type='" . $input_type . "' " . $src ."id='jcart-paypal-checkout' name='jcart_paypal_checkout' value='" . $text['checkout_paypal_button'] . "'" . $disable_paypal_checkout . " />\n";
-			}
-		echo "\t\t</fieldset>\n";
-		echo "\t</form>\n";
-
-		// IF UPDATING AN ITEM, FOCUS ON ITS QTY INPUT AFTER THE CART IS LOADED (DOESN'T SEEM TO WORK IN IE7)
-		if ($_POST['jcart_update_item'])
-			{
-			echo "\t" . '<script type="text/javascript">$(function(){$("#jcart-item-id-' . $_POST['item_id'] . '").focus()});</script>' . "\n";
-			}
-
-		echo "</div>\n<!-- END JCART -->\n";
-		}
-	}
-?>
+		// Make this a $jcart['template'] variable? - jstn
+		include_once('jcart-template.php');
+		
+		}//display_cart()
+}//class jcart{}

@@ -20,8 +20,8 @@ header("Expires: Sat, 26 Jul 1997 05:00:00 GMT"); // Date in the past
 // CONTINUE THE SESSION
 session_start();
 
-?>
-
+?>   
+    
 // WHEN THE DOCUMENT IS READY
 $(function(){
 
@@ -167,14 +167,42 @@ $(function(){
 	$('form.jcart').submit(function(){
 
 		// GET INPUT VALUES FOR USE IN AJAX POST
-		var itemId = $(this).find('input[name=<?php echo $jcart['item_id']?>]').val();
-		var itemPrice = $(this).find('input[name=<?php echo $jcart['item_price']?>]').val();
-		var itemName = $(this).find('input[name=<?php echo $jcart['item_name']?>]').val();
-		var itemQty = $(this).find('input[name=<?php echo $jcart['item_qty']?>]').val();
-		var itemAdd = $(this).find('input[name=<?php echo $jcart['item_add']?>]').val();
+//JSTN-begin
+//		var itemId = $(this).find('input[name=<?php echo $jcart['item_id']?>]').val();
+//		var itemPrice = $(this).find('input[name=<?php echo $jcart['item_price']?>]').val();
+//		var itemName = $(this).find('input[name=<?php echo $jcart['item_name']?>]').val();
+//		var itemQty = $(this).find('input[name=<?php echo $jcart['item_qty']?>]').val();
+//		var itemAdd = $(this).find('input[name=<?php echo $jcart['item_add']?>]').val();
+		//bulk
+		//var itemBulk = $(this).find('input[name=<?php echo $jcart['item_bulk']?>]').val();
+
+    //Generate "postData"
+    var postData = {
+      //REMOVE "input" FROM THE FOLLOWING STRINGS TO USE SELECTBOXES INSTEAD OF HIDDEN/TEXT INPUTS
+      "<?php echo $jcart['store_id']?>"   : $(this).find('input[name=<?php echo $jcart['store_id']?>]').val(),
+      "<?php echo $jcart['item_id']?>"    : $(this).find('input[name=<?php echo $jcart['item_id']?>]').val(),
+      "<?php echo $jcart['item_price']?>" : $(this).find('input[name=<?php echo $jcart['item_price']?>]').val(),
+      "<?php echo $jcart['item_name']?>"  : $(this).find('input[name=<?php echo $jcart['item_name']?>]').val(),
+      "<?php echo $jcart['item_qty']?>"   : $(this).find('input[name=<?php echo $jcart['item_qty']?>]').val(),
+      "<?php echo $jcart['item_add']?>"   : $(this).find('input[name=<?php echo $jcart['item_add']?>]').val(),
+      "<?php echo $jcart['item_bulk']?>"  : $(this).find('input[name=<?php echo $jcart['item_bulk']?>]').val()
+    };
+    $(this).find('[name^=<?php echo $jcart['item_options'] ?>]').each(function(){
+      //Test to determine if the input is a radio button or checkbox, then
+      //  only send a value if the input is selected ("checked")
+      if ( ($(this).attr("type").toLowerCase() !== 'checkbox') && ($(this).attr("type").toLowerCase() !== 'radio') ) {
+        postData[$(this).attr("name")] = $(this).val();      
+      } else {
+        if ( $(this).is(":checked") ) {
+          postData[$(this).attr("name")] = $(this).val();
+        }
+      }
+    });
 
 		// SEND ITEM INFO VIA POST TO INTERMEDIATE SCRIPT WHICH CALLS jcart.php AND RETURNS UPDATED CART HTML
-		$.post('<?php echo $jcart['path'];?>jcart-relay.php', { "<?php echo $jcart['item_id']?>": itemId, "<?php echo $jcart['item_price']?>": itemPrice, "<?php echo $jcart['item_name']?>": itemName, "<?php echo $jcart['item_qty']?>": itemQty, "<?php echo $jcart['item_add']?>" : itemAdd }, function(data) {
+//		$.post('<?php echo $jcart['path'];?>jcart-relay.php', { "<?php echo $jcart['item_id']?>": itemId, "<?php echo $jcart['item_price']?>": itemPrice, "<?php echo $jcart['item_name']?>": itemName, "<?php echo $jcart['item_qty']?>": itemQty, "<?php echo $jcart['item_add']?>" : itemAdd }, function(data) {
+      $.post('<?php echo $jcart['path'];?>jcart-relay.php', postData, function(data) {
+//JSTN-end
 
 			// REPLACE EXISTING CART HTML WITH UPDATED CART HTML
 			$('#jcart').html(data);
@@ -207,7 +235,7 @@ $(function(){
 	// JQUERY live METHOD MAKES FUNCTIONS BELOW AVAILABLE TO ELEMENTS ADDED DYNAMICALLY VIA AJAX
 
 	// WHEN A REMOVE LINK IS CLICKED
-	$('#jcart a').live('click', function(){
+	$('#jcart a.jcart-remove').live('click', function(){
 
 		// GET THE QUERY STRING OF THE LINK THAT WAS CLICKED
 		var queryString = $(this).attr('href');
@@ -229,7 +257,6 @@ $(function(){
 		return false;
 	});
 
-
 	// WHEN AN ITEM QTY CHANGES
 	// CHANGE EVENT IS NOT CURRENTLY SUPPORTED BY LIVE METHOD
 	// STILL WORKS IN MOST BROWSERS, BUT NOT INTERNET EXPLORER
@@ -237,11 +264,14 @@ $(function(){
 	$('#jcart input[type="text"]').live('keyup', function(){
 
 		// GET ITEM ID FROM THE ITEM QTY INPUT ID VALUE, FORMATTED AS jcart-item-id-n
+//new format: jcart-item-id=n,o
+//split at "=" and return string "n,o"
 		var updateId = $(this).attr('id');
-		updateId = updateId.split('-');
+		
+		updateId = updateId.split('=');
 
 		// THE ID OF THE ITEM TO UPDATE
-		updateId = updateId[3];
+		updateId = updateId[1];
 
 		// GET THE NEW QTY
 		var updateQty = $(this).val();

@@ -55,15 +55,17 @@ $cart =& $_SESSION['jcart']; if(!is_object($cart)) $cart = new jcart();
 			</div>
 
 			<div id="content">
+        <!-- BEGIN JCART --><div id='jcart'>
 				<?php $cart->display_cart($jcart);?>
+				</div><!-- END JCART -->
 
-				<p><a href="store.php">&larr; Continue shopping</a></p>
+				<p><a href="index.php">&larr; Continue shopping</a></p>
 
 				<div class="clear"></div>
 			</div>
 		</div>
 
 		<script type="text/javascript" src="jcart/jquery-1.3.2.min.js"></script>
-		<script type="text/javascript" src="jcart/jcart-javascript.min.php"></script>
+		<script type="text/javascript" src="jcart/jcart-javascript.php"></script>
 	</body>
 </html>

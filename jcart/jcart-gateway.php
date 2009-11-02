@@ -87,36 +87,68 @@ else
 	// SEND CART CONTENTS TO PAYPAL USING THEIR UPLOAD METHOD, FOR DETAILS SEE http://tinyurl.com/djoyoa
 	else if ($valid_prices === true)
 		{
-		// PAYPAL COUNT STARTS AT ONE INSTEAD OF ZERO
-		$paypal_count = 1;
-		$items_query_string;
+		$paypal_count = 1; // PAYPAL COUNT STARTS AT ONE INSTEAD OF ZERO
+		$query_string;
 		foreach ($cart->get_contents() as $item)
 			{
 			// BUILD THE QUERY STRING
-			$items_query_string .= '&item_name_' . $paypal_count . '=' . $item['name'];
-			$items_query_string .= '&amount_' . $paypal_count . '=' . $item['price'];
-			$items_query_string .= '&quantity_' . $paypal_count . '=' . $item['qty'];
+			$query_string .= '&item_name_' . $paypal_count . '=' . $item['name'];
+			$query_string .= '&item_number_' . $paypal_count . '=' . $item['id'];
+			$query_string .= '&amount_' . $paypal_count . '=' . $item['price'];
+			$query_string .= '&quantity_' . $paypal_count . '=' . $item['qty'];
+			if ($item['option'] != '') {
+        //again, need to modify this to support JSON, instead of string - jstn
+  			$query_string .= '&on0_' . $paypal_count . '=Option'; if (strpos($item['option'], ",") !== false) { $query_string .= 's'; }
+  			$query_string .= '&os0_' . $paypal_count . '=' . $item['option'];
+  		}
 
 			// INCREMENT THE COUNTER
 			++$paypal_count;
 			}
-
+			
+		// ADD OPTIONAL PayPal CHECKOUT VALUES, IF SET
+		if($jcart['currency_code']) { $query_string .= '&currency_code=' . $jcart['paypal_currency']; }
+		if($jcart['paypal_return']) { $query_string .= '&return=' . $jcart['paypal_return']; }
+		if($jcart['paypal_cancel']) { $query_string .= '&cancel_return=' . $jcart['paypal_cancel']; }
+			
 		// EMPTY THE CART
 		$cart->empty_cart();
+// FUTURE CHANGE: only empty cart upon successful purchase. If user clicks
+//  "Cancel and return to [website]", cart contents will be retained. - jstn
 
 		if($jcart['paypal_id'])
 			{
 			// REDIRECT TO PAYPAL WITH MERCHANT ID AND CART CONTENTS
-			header( 'Location: https://www.paypal.com/cgi-bin/webscr?cmd=_cart&upload=1&business=' . $jcart['paypal_id'] . $items_query_string);
+			header( 'Location: https://www.paypal.com/cgi-bin/webscr?cmd=_cart&upload=1&charset=utf-8&business=' . $jcart['paypal_id'] . $query_string);
 			exit;
 			}
 		else
 			// THE USER HAS NOT CONFIGURED A PAYPAL ID
 			// DISPLAY THE PAYPAL URL WITH AN ERROR MESSAGE
 			{
+//Notice from jCart v1.1
+/*
 			echo 'PayPal integration requires a secure merchant ID. Please see the <a href="http://conceptlogic.com/jcart/install.php">installation instructions</a> for more info.<br /><br />';
 			echo 'Below is the URL that would be sent to PayPal if a merchant ID was set in <strong>jcart-config.php</strong>:<br /><br />';
 			echo 'https://www.paypal.com/cgi-bin/webscr?cmd=_cart&upload=1&business=PAYPAL_ID' . $items_query_string;
+*/
+
+//Notice from jCart 1.2
+?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+	<head>
+		<title></title>
+	</head>
+	<body>
+		<div style="width:950px; margin:40px auto; padding:20px; border:solid 2px #333; background:#ededed;">
+			<p><strong>PayPal integration requires a secure merchant ID!</strong></p>
+			<p>Below is the URL that would be sent to PayPal if a merchant ID was set<!-- in your <a href="<?php echo get_option('siteurl');?>/wp-admin/options-general.php?page=jcart/jcart-admin.php">jCart options</a>-->:</p>
+			<p>https://www.paypal.com/cgi-bin/webscr?cmd=_cart&upload=1&charset=utf-8&currency_code=<?php echo $jcart['paypal_currency'];?>&business=PAYPAL_ID<?php echo $items_query_string;?></p>
+		</div>
+	</body>
+</html>
+<?php
 			exit;
 			}
 		}

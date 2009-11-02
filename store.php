@@ -53,7 +53,9 @@ $cart =& $_SESSION['jcart']; if(!is_object($cart)) $cart = new jcart();
 			<h2>Demo Store</h2>
 
 			<div id="sidebar">
+        <!-- BEGIN JCART --><div id='jcart'>
 				<?php $cart->display_cart($jcart);?>
+        </div><!-- END JCART -->
 			</div>
 
 			<div id="content">
@@ -116,6 +118,9 @@ $cart =& $_SESSION['jcart']; if(!is_object($cart)) $cart = new jcart();
 		</div>
 
 		<script type="text/javascript" src="jcart/jquery-1.3.2.min.js"></script>
+<!--
 		<script type="text/javascript" src="jcart/jcart-javascript.min.php"></script>
+-->
+    <script type="text/javascript" src="jcart/jcart-javascript.php"></script>
 	</body>
 </html>
